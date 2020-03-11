@@ -1,8 +1,10 @@
 import os
-import datetime
-from flask import Flask,render_template
+from datetime import datetime
+from flask import Flask,render_template,redirect,url_for,request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from forms import LoginForm
+from flask_login import login_user,logout_user,login_required
 from werkzeug.security import generate_password_hash,check_password_hash
 
 app = Flask(__name__)
@@ -47,3 +49,22 @@ class Photo(db.Model):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/login')
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user_name = request.form.get('username', None)
+        password = request.form.get('password', None)
+        user = User(user_name, password)
+        if user.verify_password(password):
+            login_user(user)
+            return redirect(request.args.get('next') or url_for('main'))
+    return render_template('login.html', title="Sign In", form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
